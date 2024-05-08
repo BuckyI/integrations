@@ -35,7 +35,10 @@ def upload_image(image: str | BytesIO, name: str) -> str:
     response = requests.post("https://sm.ms/api/v2/upload", files=files, headers=headers)
 
     res = response.json()
-    if not res["success"]:
-        raise Exception(res["message"])
-
-    return res["data"]["url"]
+    match res["code"]:
+        case "success":
+            return res["data"]["url"]
+        case "repeated":
+            return res["images"]  # previously uploaded url
+        case _:  # unsupported conditions
+            raise Exception(f"{res['code']}: {res['message']}\ndata:\n {res}")
