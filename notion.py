@@ -12,13 +12,24 @@ client = None
 
 
 def init(token: str) -> None:
+    "token: Notion integration token"
     global client
     client = notion_client.Client(auth=token)
 
 
+def require_client(func):
+    def wrapper(*args, **kwargs):
+        global client
+        if not client:
+            raise Exception("use init to initialize notion client first")
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@require_client
 def retrieve_database_pages(database_id: str, start_cursor=None, **kwargs) -> Generator[dict, None, None]:
     "retrieve ALL pages inside a database"
-    assert client is not None, "use init to initialize notion client first"
     data: dict = client.databases.query(database_id=database_id, start_cursor=start_cursor)  # type: ignore
     yield from data["results"]
     while data["has_more"]:
@@ -26,9 +37,9 @@ def retrieve_database_pages(database_id: str, start_cursor=None, **kwargs) -> Ge
         yield from data["results"]
 
 
+@require_client
 def retrieve_block_children(block_id: str, start_cursor=None) -> Generator[dict, None, None]:
     "retrieve ALL children blocks inside a page"
-    assert client is not None, "use init to initialize notion client first"
     data: dict = client.blocks.children.list(block_id=block_id, start_cursor=start_cursor)  # type: ignore
     yield from data["results"]
     while data["has_more"]:
@@ -37,9 +48,9 @@ def retrieve_block_children(block_id: str, start_cursor=None) -> Generator[dict,
         yield from data["results"]
 
 
+@require_client
 def create_database_page(database_id: str, properties: dict = {}) -> dict:
     "create a new empty page inside a database, return the created page"
-    assert client is not None, "use init to initialize notion client first"
     # properties must be specified (`{}` for empty)
     # otherwise would raise body failed validation error
     return client.pages.create(parent={"database_id": database_id}, properties=properties)  # type: ignore
