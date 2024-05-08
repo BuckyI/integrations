@@ -38,7 +38,7 @@ def upload_image(image: str | BytesIO, name: str) -> str:
     match res["code"]:
         case "success":
             return res["data"]["url"]
-        case "repeated":
+        case "image_repeated":
             return res["images"]  # previously uploaded url
         case _:  # unsupported conditions
             raise Exception(f"{res['code']}: {res['message']}\ndata:\n {res}")
