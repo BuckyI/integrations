@@ -4,7 +4,7 @@ from os.path import exists
 
 import requests
 
-from utils import Config
+from .utils import Config
 
 cfg = Config()
 

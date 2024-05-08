@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 import requests
 
-from utils import Config
+from .utils import Config
 
 cfg = Config()
 

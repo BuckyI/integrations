@@ -2,7 +2,7 @@ from email.mime.text import MIMEText
 from smtplib import SMTP_SSL
 from typing import List, NamedTuple
 
-from utils import Config
+from .utils import Config
 
 cfg = Config()
 

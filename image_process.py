@@ -4,7 +4,7 @@ from io import BytesIO
 import requests
 from cachetools import TTLCache, cached
 
-from utils import Config
+from .utils import Config
 
 cfg = Config()
 
