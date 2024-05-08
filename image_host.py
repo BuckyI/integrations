@@ -17,14 +17,19 @@ def init(token: str) -> None:
 
 
 @cfg.check_initialized
-def upload_image(image: str | BytesIO, name: str) -> str:
+def upload_image(source: str | BytesIO | bytes, name: str) -> str:
     """
-    upload image from BytesIO or file path
+    upload image from BytesIO or file path or raw bytes
     you may use `BytesIO(open("image.jpg", "rb").read())` if it is a file
     """
-    if isinstance(image, str):
-        assert exists(image), "image does not exist"
-        image = BytesIO(open(image, "rb").read())
+    if isinstance(source, str):
+        assert exists(source), "image does not exist"
+        image = BytesIO(open(source, "rb").read())
+    elif isinstance(source, bytes):
+        image = BytesIO(source)
+    else:
+        assert isinstance(source, BytesIO), "invalid source type"
+        image = source
     image.name = name
     headers = {"Authorization": cfg.token}
     files = {"smfile": image}
