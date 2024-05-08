@@ -1,4 +1,5 @@
 addict
+cachetools
 notion-client
 webdavclient3
 requests
