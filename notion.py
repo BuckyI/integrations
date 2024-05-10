@@ -25,24 +25,41 @@ def require_client(func):
 
 
 @require_client
-def retrieve_database_pages(database_id: str, start_cursor=None, **kwargs) -> Generator[dict, None, None]:
-    "retrieve ALL pages inside a database"
-    data: dict = client.databases.query(database_id=database_id, start_cursor=start_cursor)  # type: ignore
-    yield from data["results"]
-    while data["has_more"]:
-        data: dict = client.databases.query(database_id, start_cursor=data["next_cursor"])  # type: ignore
+def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwargs) -> Generator[dict, None, None]:
+    """
+    retrieve pages inside a database
+    retreive_all: if True, try to retrieve all pages by performing query in a loop.
+    """
+    has_more = True
+    start_cursor = None
+    if "page_size" in kwargs:
+        retreive_all = False  # force only query once
+
+    while has_more:
+        data: dict = client.databases.query(database_id=database_id, start_cursor=start_cursor, **kwargs)  # type: ignore
         yield from data["results"]
+
+        start_cursor = data["next_cursor"]
+        has_more = data["has_more"] and retreive_all
 
 
 @require_client
-def retrieve_block_children(block_id: str, start_cursor=None) -> Generator[dict, None, None]:
-    "retrieve ALL children blocks inside a page"
-    data: dict = client.blocks.children.list(block_id=block_id, start_cursor=start_cursor)  # type: ignore
-    yield from data["results"]
-    while data["has_more"]:
-        start_cursor = data["next_cursor"]
+def retrieve_block_children(block_id: str, retreive_all: bool = True, **kwargs) -> Generator[dict, None, None]:
+    """
+    retrieve children blocks inside a page.
+    retreive_all: if True, try to retrieve all pages by performing query in a loop.
+    """
+    has_more = True
+    start_cursor = None
+    if "page_size" in kwargs:
+        retreive_all = False  # force only query once
+
+    while has_more:
         data: dict = client.blocks.children.list(block_id=block_id, start_cursor=start_cursor)  # type: ignore
         yield from data["results"]
+
+        start_cursor = data["next_cursor"]
+        has_more = data["has_more"] and retreive_all
 
 
 @require_client
