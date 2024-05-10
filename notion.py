@@ -8,8 +8,6 @@ from typing import Generator
 
 import notion_client
 
-client = None
-
 
 def init(token: str) -> None:
     "token: Notion integration token"
@@ -19,8 +17,7 @@ def init(token: str) -> None:
 
 def require_client(func):
     def wrapper(*args, **kwargs):
-        global client
-        if not client:
+        if "client" not in globals():
             raise Exception("use init to initialize notion client first")
         return func(*args, **kwargs)
 
