@@ -1,8 +1,10 @@
 "image process based on https://www.iloveimg.com/"
 from io import BytesIO
+from pathlib import Path
 
 import requests
 from cachetools import TTLCache, cached
+from loguru import logger
 
 from .utils import Config
 
@@ -36,10 +38,12 @@ def compress_image(image: bytes) -> bytes:
     headers = {"Authorization": f"Bearer {token}"}
 
     # step1: start
+    logger.debug("start compress image")
     res = requests.get("https://api.iloveimg.com/v1/start/compressimage", headers=headers).json()
     server, task = res["server"], res["task"]
 
     # step2: upload
+    logger.debug("upload image")
     res = requests.post(
         f"https://{server}/v1/upload",
         headers=headers,
@@ -49,6 +53,7 @@ def compress_image(image: bytes) -> bytes:
     server_filename = res["server_filename"]
 
     # step3: process
+    logger.debug("process image")
     url = f"https://{server}/v1/process"
     data = {
         "task": task,
@@ -59,8 +64,10 @@ def compress_image(image: bytes) -> bytes:
     # download_filename = res["download_filename"]  # by default, it is the same as file.name
 
     # step4: download
+    logger.debug("download image")
     url = f"https://{server}/v1/download/{task}"
     response = requests.get(url, headers=headers)
+    response.raise_for_status()  # 检查请求是否成功
     return response.content
 
 
@@ -68,3 +75,8 @@ def download_image_as_bytes(url):
     response = requests.get(url)
     response.raise_for_status()  # 检查请求是否成功
     return response.content
+
+
+def ext(path: str):
+    "get file extension"
+    return Path(path).suffix
