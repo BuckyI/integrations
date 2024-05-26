@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import NamedTuple
 
 import requests
+from loguru import logger
 
 from .utils import Config
 
@@ -52,6 +53,7 @@ def create_tasks(tasks: list[Task]):
 
     url = "https://habitica.com/api/v3/tasks/user"
     bot_tag = get_bot_tag()
+    logger.debug(f"create {len(tasks)} task")
     for task in tasks:
         payload = {
             "text": task.text,
@@ -65,6 +67,7 @@ def create_tasks(tasks: list[Task]):
             print(f"{task} created failed")
 
         if response.headers["X-RateLimit-Remaining"] == "0":
+            logger.warning("rate limit exceeded, sleep 60s")
             time.sleep(60)  # sleep 1 minute if rate limit is exceeded
 
 
@@ -75,7 +78,8 @@ def delete_bot_tasks():
     url = "https://habitica.com/api/v3/tasks/user"
     payload = {"type": "todos"}  # 不知道为什么不起作用
     response = requests.get(url, json=payload, headers=cfg.headers)
-    tasks = filter(lambda t: bot_tag in t["tags"] and t["type"] == "todo", response.json()["data"])
+    tasks = list(filter(lambda t: bot_tag in t["tags"] and t["type"] == "todo", response.json()["data"]))
+    logger.debug(f"delete {len(tasks)} task")
     for t in tasks:
         url = f"https://habitica.com/api/v3/tasks/{t['id']}"
         response = requests.delete(url, headers=cfg.headers)
@@ -83,4 +87,5 @@ def delete_bot_tasks():
             print(f"Failed to delete task {t}.")
 
         if response.headers["X-RateLimit-Remaining"] == "0":
+            logger.warning("rate limit exceeded, sleep 60s")
             time.sleep(60)  # sleep 1 minute if rate limit is exceeded
