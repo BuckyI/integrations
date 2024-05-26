@@ -29,9 +29,10 @@ def request_signed_token(public_key: str):
 
 
 @cfg.check_initialized
-def compress_image(image: bytes) -> bytes:
+def compress_image(image: bytes, ext=".png") -> bytes:
     """
     image: image file object, eg. open("image.jpg", "rb").read(), or download from url
+    ext: image file extension, inconsistency with true image type may leads to bad compression result (especially for png)
     return: processed image bytes, you may save it to a file by `open("output.jpg", "wb").write(img)`
     """
     token = request_signed_token(cfg.public_key)
@@ -47,7 +48,7 @@ def compress_image(image: bytes) -> bytes:
     res = requests.post(
         f"https://{server}/v1/upload",
         headers=headers,
-        files={"file": ("filename.jpg", BytesIO(image))},  # here specify a filename, not important
+        files={"file": ("filename" + ext, BytesIO(image))},  # here specify a filename, not important
         data={"task": task},
     ).json()
     server_filename = res["server_filename"]
@@ -58,7 +59,7 @@ def compress_image(image: bytes) -> bytes:
     data = {
         "task": task,
         "tool": "compressimage",
-        "files": [{"server_filename": server_filename, "filename": "filename.jpg"}],  # filename should match above
+        "files": [{"server_filename": server_filename, "filename": "filename" + ext}],  # filename should match above
     }
     res = requests.post(url, headers=headers, json=data).json()
     # download_filename = res["download_filename"]  # by default, it is the same as file.name
