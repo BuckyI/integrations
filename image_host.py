@@ -14,6 +14,7 @@ def init(token: str) -> None:
     """token: your sm.ms token"""
     global cfg
     cfg.token = token
+    cfg.headers = {"Authorization": token}
     cfg.mark_initialized()
 
 
@@ -37,9 +38,8 @@ def upload_image(source: str | BytesIO | bytes, name: str, bucket: str = "img") 
 
     # set image name
     image.name = f"{bucket}-{name}"
-    headers = {"Authorization": cfg.token}
     files = {"smfile": image}
-    response = requests.post("https://sm.ms/api/v2/upload", files=files, headers=headers)
+    response = requests.post("https://sm.ms/api/v2/upload", files=files, headers=cfg.headers)
 
     res = response.json()
     match res["code"]:
@@ -55,13 +55,12 @@ def upload_image(source: str | BytesIO | bytes, name: str, bucket: str = "img") 
 @cfg.check_initialized
 def image_list() -> Generator[dict, None, None]:
     "get all uploaded images"
-    headers = {"Authorization": cfg.token}
     url = "https://sm.ms/api/v2/upload_history"
     payload = {"page": 1}
-    res = requests.get(url, data=payload, headers=headers).json()
+    res = requests.get(url, data=payload, headers=cfg.headers).json()
     yield from res["data"]
 
     for i in range(2, res["TotalPages"] + 1):
         payload["page"] = i
-        res = requests.get(url, data=payload, headers=headers).json()
+        res = requests.get(url, data=payload, headers=cfg.headers).json()
         yield from res["data"]
