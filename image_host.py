@@ -5,7 +5,7 @@ from typing import Generator
 
 import requests
 
-from utils import Config
+from .utils import Config
 
 cfg = Config()
 
