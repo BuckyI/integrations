@@ -86,7 +86,7 @@ def create_tasks(tasks: list[Task]):
         }
         response = requests.post(url, json=payload, headers=cfg.headers)
         result = _check(response)
-        if result == "TooManyRequests":  # retry
+        if result != "Success":  # retry
             response = requests.post(url, json=payload, headers=cfg.headers)
             result = _check(response)
         if result != "Success":
@@ -111,7 +111,7 @@ def delete_bot_tasks():
         url = f"https://habitica.com/api/v3/tasks/{t['id']}"
         response = requests.delete(url, headers=cfg.headers)
         result = _check(response)
-        if result == "TooManyRequests":  # retry
+        if result != "Success":  # retry
             response = requests.delete(url, headers=cfg.headers)
             result = _check(response)
         if result != "Success":
