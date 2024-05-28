@@ -27,23 +27,20 @@ def init(user: str, key: str):
 
 def _check(response):
     "check response result and catch rate limit, return status code"
-    match response.status_code:
-        case 200:
+    try:
+        # 某些未知情况下 response.json() 会报错，所以这里谨慎一些
+        res = response.json()
+        if res["success"]:
             return "Success"
-        case 429:
+        if response.status_code == 429:
             retry_after = float(response.headers["Retry-After"])
             logger.warning(f"rate limit exceeded, sleep {retry_after}s")
             time.sleep(retry_after)
             return "TooManyRequests"
-        case _:  # other status code
-            # 某些未知情况下 response.json() 会报错，所以这里谨慎一些
-            try:
-                res = response.json()
-                logger.error(res["error"])
-                return res["error"]
-            except Exception as e:
-                logger.exception(e)
-                return "UnknownError"
+    except Exception as e:
+        logger.exception(e)
+    logger.error(f"UnknownError: {response.status_code=}, {response.text=}")
+    return "UnknownError"
 
 
 @cfg.check_initialized
