@@ -28,15 +28,18 @@ def init(user: str, key: str):
 def _check(response):
     "check response result and catch rate limit, return status code"
     try:
-        # 某些未知情况下 response.json() 会报错，所以这里谨慎一些
-        res = response.json()
-        if res["success"]:
-            return "Success"
+        # 某些未知情况下 response.json() 会报错，所以这里谨慎一些 (可能是因为 502，返回的是 html)
         if response.status_code == 429:
             retry_after = float(response.headers["Retry-After"])
             logger.warning(f"rate limit exceeded, sleep {retry_after}s")
             time.sleep(retry_after)
             return "TooManyRequests"
+        if response.status_code == 502:  # bad gateway
+            logger.warning("502 Bad Gateway, sleep 1s")
+            time.sleep(1)
+            return "BadGateway"
+        if response.json()["success"]:
+            return "Success"
     except Exception as e:
         logger.exception(e)
     logger.error(f"UnknownError: {response.status_code=}, {response.text=}")
