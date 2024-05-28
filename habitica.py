@@ -25,6 +25,27 @@ def init(user: str, key: str):
     cfg.mark_initialized()
 
 
+def _check(response):
+    "check response result and catch rate limit, return status code"
+    match response.status_code:
+        case 200:
+            return "Success"
+        case 429:
+            retry_after = float(response.headers["Retry-After"])
+            logger.warning(f"rate limit exceeded, sleep {retry_after}s")
+            time.sleep(retry_after)
+            return "TooManyRequests"
+        case _:  # other status code
+            # 某些未知情况下 response.json() 会报错，所以这里谨慎一些
+            try:
+                res = response.json()
+                logger.error(res["error"])
+                return res["error"]
+            except Exception as e:
+                logger.exception(e)
+                return "UnknownError"
+
+
 @cfg.check_initialized
 @lru_cache
 def get_bot_tag() -> str:
@@ -49,7 +70,9 @@ class Task(NamedTuple):
 def create_tasks(tasks: list[Task]):
     """
     create a list of tasks
+    return tasks that failed to create
     """
+    failed: list[Task] = []
 
     url = "https://habitica.com/api/v3/tasks/user"
     bot_tag = get_bot_tag()
@@ -62,17 +85,21 @@ def create_tasks(tasks: list[Task]):
             "tags": [bot_tag],  # indicate that the task is created by a bot
         }
         response = requests.post(url, json=payload, headers=cfg.headers)
-        result = response.json()
-        if not result["success"]:
-            print(f"{task} created failed")
-
-        if response.headers["X-RateLimit-Remaining"] == "0":
-            logger.warning("rate limit exceeded, sleep 60s")
-            time.sleep(60)  # sleep 1 minute if rate limit is exceeded
+        result = _check(response)
+        if result == "TooManyRequests":  # retry
+            response = requests.post(url, json=payload, headers=cfg.headers)
+            result = _check(response)
+        if result != "Success":
+            logger.error(f"{task} created failed ({result})")
+            failed.append(task)
+    return failed
 
 
 @cfg.check_initialized
 def delete_bot_tasks():
+    "delete bot tasks, return tasks that failed to delete"
+    failed = []
+
     bot_tag = get_bot_tag()
     # get all tasks
     url = "https://habitica.com/api/v3/tasks/user"
@@ -83,9 +110,11 @@ def delete_bot_tasks():
     for t in tasks:
         url = f"https://habitica.com/api/v3/tasks/{t['id']}"
         response = requests.delete(url, headers=cfg.headers)
-        if not response.json()["success"]:
-            print(f"Failed to delete task {t}.")
-
-        if response.headers["X-RateLimit-Remaining"] == "0":
-            logger.warning("rate limit exceeded, sleep 60s")
-            time.sleep(60)  # sleep 1 minute if rate limit is exceeded
+        result = _check(response)
+        if result == "TooManyRequests":  # retry
+            response = requests.delete(url, headers=cfg.headers)
+            result = _check(response)
+        if result != "Success":
+            logger.error(f"Failed to delete task {t}. ({result})")
+            failed.append(t)
+    return failed
