@@ -25,6 +25,18 @@ def require_client(func):
 
 
 @require_client
+def retrieve_general_info(id: str):
+    """
+    retreive general info from id, useful for checking type: page, database, blocks...
+    Note: "child_page" for page, "child_database" for database, other for general blocks
+    """
+    data: dict = client.blocks.retrieve(id)  # type: ignore
+    for k in ["object", "request_id"]:
+        data.pop(k)
+    return data
+
+
+@require_client
 def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwargs) -> Generator[dict, None, None]:
     """
     retrieve pages inside a database
