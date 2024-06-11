@@ -4,3 +4,4 @@ notion-client
 webdavclient3
 requests
 loguru
+openai
