@@ -2,6 +2,7 @@ import io
 import tempfile
 from pathlib import Path
 
+import requests
 from webdav3.client import Client
 
 
@@ -54,3 +55,10 @@ class JGY:
             with temp_file.file as f:
                 f.write(file.read())
             self.client.upload(dest, temp_file.name)
+
+    def upload_url(self, url: str, filename: str) -> None:
+        assert not self.exists(filename), "file already exists in remote"
+        response = requests.get(url)
+        response.raise_for_status()
+        dest = f"{self.root}/{filename}"
+        self.client.upload_to(buff=response.content, remote_path=dest)
