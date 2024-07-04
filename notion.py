@@ -11,9 +11,8 @@ import notion_client
 
 def init(token: str) -> None:
     "token: Notion integration token"
-    global client, TOKEN
+    global client
     client = notion_client.Client(auth=token)
-    TOKEN = token
 
 
 def require_client(func):
@@ -29,8 +28,7 @@ def enrich_data(data: dict | Iterable[dict]):
     "enrich data with additional fields"
 
     def _enrich(d: dict) -> dict:
-        global TOKEN
-        d["token"] = TOKEN  # for development
+        d["token"] = client.options.auth  # for development
         return d
 
     if isinstance(data, dict):
