@@ -4,15 +4,16 @@
 
 import html
 import re
-from typing import Generator
+from typing import Generator, Iterable
 
 import notion_client
 
 
 def init(token: str) -> None:
     "token: Notion integration token"
-    global client
+    global client, TOKEN
     client = notion_client.Client(auth=token)
+    TOKEN = token
 
 
 def require_client(func):
@@ -24,6 +25,20 @@ def require_client(func):
     return wrapper
 
 
+def enrich_data(data: dict | Iterable[dict]):
+    "enrich data with additional fields"
+
+    def _enrich(d: dict) -> dict:
+        global TOKEN
+        d["token"] = TOKEN  # for development
+        return d
+
+    if isinstance(data, dict):
+        return _enrich(data)
+    else:
+        return map(_enrich, data)
+
+
 @require_client
 def retrieve_general_info(id: str):
     """
@@ -33,7 +48,13 @@ def retrieve_general_info(id: str):
     data: dict = client.blocks.retrieve(id)  # type: ignore
     for k in ["object", "request_id"]:
         data.pop(k)
-    return data
+    return enrich_data(data)
+
+
+@require_client
+def retrieve_page(page_id: str) -> dict:
+    "retrieve a page by id"
+    return enrich_data(client.pages.retrieve(page_id))  # type: ignore
 
 
 @require_client
@@ -49,7 +70,7 @@ def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwarg
 
     while has_more:
         data: dict = client.databases.query(database_id=database_id, start_cursor=start_cursor, **kwargs)  # type: ignore
-        yield from data["results"]
+        yield from enrich_data(data["results"])
 
         start_cursor = data["next_cursor"]
         has_more = data["has_more"] and retreive_all
@@ -68,7 +89,7 @@ def retrieve_block_children(block_id: str, retreive_all: bool = True, **kwargs) 
 
     while has_more:
         data: dict = client.blocks.children.list(block_id=block_id, start_cursor=start_cursor)  # type: ignore
-        yield from data["results"]
+        yield from enrich_data(data["results"])
 
         start_cursor = data["next_cursor"]
         has_more = data["has_more"] and retreive_all
@@ -79,7 +100,8 @@ def create_database_page(database_id: str, properties: dict = {}) -> dict:
     "create a new empty page inside a database, return the created page"
     # properties must be specified (`{}` for empty)
     # otherwise would raise body failed validation error
-    return client.pages.create(parent={"database_id": database_id}, properties=properties)  # type: ignore
+    page: dict = client.pages.create(parent={"database_id": database_id}, properties=properties)  # type: ignore
+    return enrich_data(page)  # type: ignore
 
 
 def rich_text2html(rich_text: list):
