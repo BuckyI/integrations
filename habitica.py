@@ -5,7 +5,7 @@ from typing import NamedTuple
 import requests
 from loguru import logger
 
-from .utils import Config
+from utils import Config
 
 cfg = Config()
 
@@ -118,3 +118,27 @@ def delete_bot_tasks():
             logger.error(f"Failed to delete task {t}. ({result})")
             failed.append(t)
     return failed
+
+
+@cfg.check_initialized
+def get_user_stats() -> dict:
+    url = "https://habitica.com/api/v3/user/"
+    response = requests.get(url, headers=cfg.headers)
+    stats = response.json()["data"]["stats"]
+    return stats
+
+
+@cfg.check_initialized
+def lose_gp(amount: int) -> float:
+    "lose gold coins, return current gold coins"
+    stats = get_user_stats()
+    target_hp = stats["hp"]
+    target_gp = stats["gp"] - amount
+    if target_gp < 0:  # lose hp when gp is not enough
+        target_hp = max(0, target_hp + target_gp)
+        target_gp = 0
+
+    url = "https://habitica.com/api/v3/user/"
+    payload = {"stats.gp": target_gp, "stats.hp": target_hp}
+    response = requests.put(url, json=payload, headers=cfg.headers)
+    return response.json()["data"]["stats"]["gp"]
