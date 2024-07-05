@@ -5,7 +5,7 @@ from typing import NamedTuple
 import requests
 from loguru import logger
 
-from utils import Config
+from .utils import Config
 
 cfg = Config()
 
