@@ -37,6 +37,13 @@ def enrich_data(data: dict | Iterable[dict]):
         return map(_enrich, data)
 
 
+def clean(data: dict) -> dict:
+    "remove additional fields"
+    for k in ["token"]:
+        data.pop(k, None)
+    return data
+
+
 @require_client
 def retrieve_general_info(id: str):
     """
