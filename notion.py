@@ -101,6 +101,26 @@ def retrieve_block_children(block_id: str, retreive_all: bool = True, **kwargs) 
 
 
 @require_client
+def retrieve_block_children_recursive(block_id: str, **kwargs) -> Generator[dict, None, None]:
+    """
+    retrieve children blocks inside a page.
+    retreive_all: if True, try to retrieve all pages by performing query in a loop.
+    """
+    ids = [block_id]
+    limit = int(kwargs["page_size"]) if "page_size" in kwargs else float("inf")
+    for i in ids:
+        for block in retrieve_block_children(i, **kwargs):
+            yield block
+
+            limit -= 1
+            if limit <= 0:
+                return
+
+            if block["has_children"]:
+                ids.append(block["id"])
+
+
+@require_client
 def create_database_page(database_id: str, properties: dict = {}) -> dict:
     "create a new empty page inside a database, return the created page"
     # properties must be specified (`{}` for empty)
