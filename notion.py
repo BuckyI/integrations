@@ -63,6 +63,38 @@ def retrieve_page(page_id: str) -> dict:
 
 
 @require_client
+def retrieve_comments(block_id: str, retrieve_all: bool = True, **kwargs) -> Generator[dict, None, None]:
+    """
+    Retrieve comments for a given block.
+    retrieve_all: if True, try to retrieve all comments by performing query in a loop.
+    """
+    has_more = True
+    start_cursor = None
+    if "page_size" in kwargs:
+        retrieve_all = False  # force only query once
+
+    while has_more:
+        comments: dict = client.comments.list(block_id=block_id, start_cursor=start_cursor, **kwargs)  # type: ignore
+        yield from enrich_data(comments["results"])
+
+        start_cursor = comments["next_cursor"]
+        has_more = comments["has_more"] and retrieve_all
+
+
+@require_client
+def retrieve_comments_recursive(block_id: str, **kwargs) -> Generator[dict, None, None]:
+    """
+    retrieve all comments for a given block/page recursively
+    default no limit on page_size (comment size)
+    """
+    # the root comment
+    yield from retrieve_comments(block_id, **kwargs)
+    # comments from children blocks
+    for block in retrieve_block_children_recursive(block_id, **kwargs):
+        yield from retrieve_comments(block["id"], **kwargs)
+
+
+@require_client
 def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwargs) -> Generator[dict, None, None]:
     """
     retrieve pages inside a database
