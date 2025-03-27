@@ -207,6 +207,23 @@ def rich_text2plain_text(rich_text: list) -> str:
     return "".join(text["plain_text"] for text in rich_text)
 
 
+def plain_text2rich_text(text: str) -> dict:
+    """
+    Generate simple rich text to simplify saving text to Notion.
+    Use case when creating a page:
+    ```
+    properties = {
+        "content": plain_text2rich_text(text),
+        ... # other properties
+    }
+    ```
+    """
+    contents = [
+        text[i : i + 2000] for i in range(0, len(text), 2000)
+    ]  # split into 2000 chunks for Notin's Size limit
+    return {"rich_text": [{"text": {"content": c}} for c in contents]}
+
+
 def rich_text2markdown(rich_text: list):
     "parse Notion rich_text to markdown format"
     result = ""
