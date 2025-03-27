@@ -63,7 +63,9 @@ def retrieve_page(page_id: str) -> dict:
 
 
 @require_client
-def retrieve_comments(block_id: str, retrieve_all: bool = True, **kwargs) -> Generator[dict, None, None]:
+def retrieve_comments(
+    block_id: str, retrieve_all: bool = True, **kwargs
+) -> Generator[dict, None, None]:
     """
     Retrieve comments for a given block.
     retrieve_all: if True, try to retrieve all comments by performing query in a loop.
@@ -74,7 +76,9 @@ def retrieve_comments(block_id: str, retrieve_all: bool = True, **kwargs) -> Gen
         retrieve_all = False  # force only query once
 
     while has_more:
-        comments: dict = client.comments.list(block_id=block_id, start_cursor=start_cursor, **kwargs)  # type: ignore
+        comments: dict = client.comments.list(
+            block_id=block_id, start_cursor=start_cursor, **kwargs
+        )  # type: ignore
         yield from enrich_data(comments["results"])
 
         start_cursor = comments["next_cursor"]
@@ -95,7 +99,9 @@ def retrieve_comments_recursive(block_id: str, **kwargs) -> Generator[dict, None
 
 
 @require_client
-def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwargs) -> Generator[dict, None, None]:
+def retrieve_database_pages(
+    database_id: str, retreive_all: bool = True, **kwargs
+) -> Generator[dict, None, None]:
     """
     retrieve pages inside a database
     retreive_all: if True, try to retrieve all pages by performing query in a loop.
@@ -106,7 +112,9 @@ def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwarg
         retreive_all = False  # force only query once
 
     while has_more:
-        data: dict = client.databases.query(database_id=database_id, start_cursor=start_cursor, **kwargs)  # type: ignore
+        data: dict = client.databases.query(
+            database_id=database_id, start_cursor=start_cursor, **kwargs
+        )  # type: ignore
         yield from enrich_data(data["results"])
 
         start_cursor = data["next_cursor"]
@@ -114,7 +122,9 @@ def retrieve_database_pages(database_id: str, retreive_all: bool = True, **kwarg
 
 
 @require_client
-def retrieve_block_children(block_id: str, retreive_all: bool = True, **kwargs) -> Generator[dict, None, None]:
+def retrieve_block_children(
+    block_id: str, retreive_all: bool = True, **kwargs
+) -> Generator[dict, None, None]:
     """
     retrieve children blocks inside a page.
     retreive_all: if True, try to retrieve all pages by performing query in a loop.
@@ -125,7 +135,9 @@ def retrieve_block_children(block_id: str, retreive_all: bool = True, **kwargs) 
         retreive_all = False  # force only query once
 
     while has_more:
-        data: dict = client.blocks.children.list(block_id=block_id, start_cursor=start_cursor)  # type: ignore
+        data: dict = client.blocks.children.list(
+            block_id=block_id, start_cursor=start_cursor
+        )  # type: ignore
         yield from enrich_data(data["results"])
 
         start_cursor = data["next_cursor"]
@@ -133,7 +145,9 @@ def retrieve_block_children(block_id: str, retreive_all: bool = True, **kwargs) 
 
 
 @require_client
-def retrieve_block_children_recursive(block_id: str, **kwargs) -> Generator[dict, None, None]:
+def retrieve_block_children_recursive(
+    block_id: str, **kwargs
+) -> Generator[dict, None, None]:
     """
     retrieve children blocks inside a page.
     retreive_all: if True, try to retrieve all pages by performing query in a loop.
@@ -157,7 +171,9 @@ def create_database_page(database_id: str, properties: dict = {}) -> dict:
     "create a new empty page inside a database, return the created page"
     # properties must be specified (`{}` for empty)
     # otherwise would raise body failed validation error
-    page: dict = client.pages.create(parent={"database_id": database_id}, properties=properties)  # type: ignore
+    page: dict = client.pages.create(
+        parent={"database_id": database_id}, properties=properties
+    )  # type: ignore
     return enrich_data(page)  # type: ignore
 
 
@@ -170,9 +186,9 @@ def rich_text2html(rich_text: list):
             case "text":
                 content = text["text"]["content"]
             case "equation":
-                content = f' ${text["equation"]["expression"]}$ '
+                content = f" ${text['equation']['expression']}$ "
             case "mention":
-                content = f' @{text["plain_text"]} '
+                content = f" @{text['plain_text']} "
                 text["annotations"]["code"] = True
             case _:
                 raise Exception("unexpected rich text type: %s" % text["type"])
@@ -233,9 +249,9 @@ def rich_text2markdown(rich_text: list):
             case "text":
                 content = text["text"]["content"]
             case "equation":
-                content = f' ${text["equation"]["expression"]}$ '
+                content = f" ${text['equation']['expression']}$ "
             case "mention":
-                content = f'`@{text["plain_text"]}`'
+                content = f"`@{text['plain_text']}`"
             case _:
                 raise Exception("unknown text type: " + text["type"])
         # TODO: markdown escape
