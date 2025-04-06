@@ -13,12 +13,7 @@ def init(api_key: str):
     key: moonshot ai api key
     """
     global cfg
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.moonshot.cn/v1",
-        max_retries=0,  # no retry, it makes harder to handle rate limit error
-    )
-    cfg.update({"api_key": api_key, "client": client})
+    cfg.update({"api_key": api_key})
     cfg.mark_initialized()
 
 
@@ -41,8 +36,13 @@ def retry_wrapper(func):
 
 @cfg.check_initialized
 @retry_wrapper
-def ask(query: str, role: str) -> str:
-    completion = cfg.client.chat.completions.create(
+def ask_moonshot(query: str, role: str) -> str:
+    client = OpenAI(
+        api_key=cfg.api_key,
+        base_url="https://api.moonshot.cn/v1",
+        max_retries=0,  # no retry, it makes harder to handle rate limit error
+    )
+    completion = client.chat.completions.create(
         model="moonshot-v1-8k",
         messages=[
             {"role": "system", "content": role},
@@ -51,3 +51,23 @@ def ask(query: str, role: str) -> str:
         temperature=0.6,
     )
     return completion.choices[0].message.content
+
+
+@cfg.check_initialized
+@retry_wrapper
+def ask_deepseek(query: str, role: str) -> str:
+    client = OpenAI(
+        api_key=cfg.api_key,
+        base_url="https://api.deepseek.com",
+    )
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": role},
+            {"role": "user", "content": query},
+        ],
+        max_tokens=1024,
+        temperature=0.7,
+        stream=False,
+    )
+    return response.choices[0].message.content
