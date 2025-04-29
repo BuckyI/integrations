@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "integrations"
+version = "0.1.0"
+description = "integrations for personal use"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["addict", "cachetools", "loguru", "requests"]
+
+[project.optional-dependencies]
+notion = ["notion-client"]
+llm = ["openai"]
+webdav = ["webdavclient3"]
