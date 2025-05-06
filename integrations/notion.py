@@ -47,7 +47,7 @@ def clean(data: dict) -> dict:
 @require_client
 def retrieve_general_info(id: str):
     """
-    retreive general info from id, useful for checking type: page, database, blocks...
+    retrieve general info from id, useful for checking type: page, database, blocks...
     Note: "child_page" for page, "child_database" for database, other for general blocks
     """
     data: dict = client.blocks.retrieve(id)  # type: ignore
@@ -100,16 +100,16 @@ def retrieve_comments_recursive(block_id: str, **kwargs) -> Generator[dict, None
 
 @require_client
 def retrieve_database_pages(
-    database_id: str, retreive_all: bool = True, **kwargs
+    database_id: str, retrieve_all: bool = True, **kwargs
 ) -> Generator[dict, None, None]:
     """
     retrieve pages inside a database
-    retreive_all: if True, try to retrieve all pages by performing query in a loop.
+    retrieve_all: if True, try to retrieve all pages by performing query in a loop.
     """
     has_more = True
     start_cursor = None
     if "page_size" in kwargs:
-        retreive_all = False  # force only query once
+        retrieve_all = False  # force only query once
 
     while has_more:
         data: dict = client.databases.query(
@@ -118,21 +118,21 @@ def retrieve_database_pages(
         yield from enrich_data(data["results"])
 
         start_cursor = data["next_cursor"]
-        has_more = data["has_more"] and retreive_all
+        has_more = data["has_more"] and retrieve_all
 
 
 @require_client
 def retrieve_block_children(
-    block_id: str, retreive_all: bool = True, **kwargs
+    block_id: str, retrieve_all: bool = True, **kwargs
 ) -> Generator[dict, None, None]:
     """
     retrieve children blocks inside a page.
-    retreive_all: if True, try to retrieve all pages by performing query in a loop.
+    retrieve_all: if True, try to retrieve all pages by performing query in a loop.
     """
     has_more = True
     start_cursor = None
     if "page_size" in kwargs:
-        retreive_all = False  # force only query once
+        retrieve_all = False  # force only query once
 
     while has_more:
         data: dict = client.blocks.children.list(
@@ -141,7 +141,7 @@ def retrieve_block_children(
         yield from enrich_data(data["results"])
 
         start_cursor = data["next_cursor"]
-        has_more = data["has_more"] and retreive_all
+        has_more = data["has_more"] and retrieve_all
 
 
 @require_client
@@ -150,7 +150,7 @@ def retrieve_block_children_recursive(
 ) -> Generator[dict, None, None]:
     """
     retrieve children blocks inside a page.
-    retreive_all: if True, try to retrieve all pages by performing query in a loop.
+    retrieve_all: if True, try to retrieve all pages by performing query in a loop.
     """
     ids = [block_id]
     limit = int(kwargs["page_size"]) if "page_size" in kwargs else float("inf")
