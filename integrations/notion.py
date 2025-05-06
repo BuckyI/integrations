@@ -252,7 +252,7 @@ def property2plain_text(property):
         case "rich_text" | "title":
             plain_text = "".join(_t["plain_text"] for _t in property[_type])
         case "select" | "status":
-            plain_text = property[_type]["name"]
+            plain_text = property[_type]["name"] if property[_type] else ""
         case "unique_id":
             _unique_id = property[_type]
             plain_text = "{}{}".format(_unique_id["prefix"] or "", _unique_id["number"])
