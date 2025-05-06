@@ -223,6 +223,47 @@ def rich_text2plain_text(rich_text: list) -> str:
     return "".join(text["plain_text"] for text in rich_text)
 
 
+def property2plain_text(property):
+    plain_text = ""
+    match _type := property["type"]:
+        case (
+            "checkbox"
+            | "created_time"
+            | "email"
+            | "last_edited_time"
+            | "number"
+            | "url"
+        ):
+            plain_text = str(property[_type])
+        case "created_by":
+            plain_text = property[_type]["id"]
+        case "date":
+            date = property[_type]
+            if date.get("end"):
+                plain_text = f"{date['start']} - {date['end']}"
+            else:
+                plain_text = date["start"]
+        case "last_edited_by":
+            plain_text = property[_type]["id"]
+        case "multi_select":
+            plain_text = ", ".join(_s["name"] for _s in property[_type])
+        case "relation":
+            plain_text = ", ".join(_r["id"] for _r in property[_type])
+        case "rich_text" | "title":
+            plain_text = "".join(_t["plain_text"] for _t in property[_type])
+        case "select" | "status":
+            plain_text = property[_type]["name"]
+        case "unique_id":
+            _unique_id = property[_type]
+            plain_text = "{}{}".format(_unique_id["prefix"] or "", _unique_id["number"])
+        case "verification":
+            plain_text = property[_type]["state"]
+        case _:
+            # files, formula, people, phone_number, rollup
+            raise NotImplementedError(f"Property type {_type} is not implemented")
+    return str(plain_text)
+
+
 def plain_text2rich_text(text: str) -> dict:
     """
     Generate simple rich text to simplify saving text to Notion.
