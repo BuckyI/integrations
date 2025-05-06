@@ -234,7 +234,7 @@ def property2plain_text(property):
             | "number"
             | "url"
         ):
-            plain_text = str(property[_type])
+            plain_text = property[_type] or ""  # None -> ""
         case "created_by":
             plain_text = property[_type]["id"]
         case "date":
