@@ -223,7 +223,11 @@ def rich_text2plain_text(rich_text: list) -> str:
     return "".join(text["plain_text"] for text in rich_text)
 
 
-def property2plain_text(property):
+def property2plain_text(property: dict, unsupported: str | None = None) -> str:
+    """
+    property: a property of a page
+    unsupported: if not set, raise NotImplementedError if the property type is not supported
+    """
     plain_text = ""
     match _type := property["type"]:
         case (
@@ -260,7 +264,9 @@ def property2plain_text(property):
             plain_text = property[_type]["state"]
         case _:
             # files, formula, people, phone_number, rollup
-            raise NotImplementedError(f"Property type {_type} is not implemented")
+            if unsupported is None:
+                raise NotImplementedError(f"Property type {_type} is not implemented")
+            plain_text = unsupported
     return str(plain_text)
 
 
