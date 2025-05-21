@@ -16,3 +16,9 @@ llm = ["openai"]
 webdav = ["webdavclient3"]
 firebase = ["google-cloud-firestore"]
 all = ["notion-client", "openai", "webdavclient3", "google-cloud-firestore"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "pip>=25.1.1",
+]
