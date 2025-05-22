@@ -243,9 +243,11 @@ def property2plain_text(property: dict, unsupported: str | None = None) -> str:
             plain_text = property[_type]["id"]
         case "date":
             date = property[_type]
-            if date.get("end"):
+            if date is None:  # no date value
+                plain_text = ""
+            elif date.get("end"):  # {"start": xxx, "end": xxx}
                 plain_text = f"{date['start']} - {date['end']}"
-            else:
+            else:  # {"start": xxx, "end": None}
                 plain_text = date["start"]
         case "last_edited_by":
             plain_text = property[_type]["id"]
