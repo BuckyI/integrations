@@ -7,7 +7,9 @@ from webdav3.client import Client
 
 
 class JGY:
-    def __init__(self, hostname: str, username: str, password: str, root: str = "Files") -> None:
+    def __init__(
+        self, hostname: str, username: str, password: str, root: str = "Files"
+    ) -> None:
         """
         坚果云 jianguoyun WebDAV client
         manage files in specified remote root folder.
@@ -23,7 +25,10 @@ class JGY:
         }
         self.client = Client(options)
         self.root = root
-        if not any(i["name"] == self.root and i["isdir"] for i in self.client.list(get_info=True)):
+        if not any(
+            i["name"] == self.root and i["isdir"]
+            for i in self.client.list(get_info=True)
+        ):
             self.client.mkdir(self.root)  # init
 
     @property
