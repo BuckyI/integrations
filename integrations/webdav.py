@@ -34,15 +34,21 @@ class JGY:
     def exists(self, filename: str) -> bool:
         return any(r["name"] == filename for r in self.resources)
 
-    def upload_file(self, source: str, filename: str | None = None) -> None:
+    def upload_file(
+        self, source: str, filename: str | None = None, overwrite: bool = False
+    ) -> None:
         """
         source: local file path
         filename: upload file name, default the same as local file
+        overwrite: if True, overwrite existing file
         """
         assert Path(source).is_file(), "file to be uploaded does not exist"
         if filename is None:  # default keep original filename
             filename = Path(source).name
-        assert not self.exists(filename), "file already exists in remote"
+
+        if not overwrite:
+            assert not self.exists(filename), "file already exists in remote"
+
         dest = f"{self.root}/{filename}"
         self.client.upload(dest, source)
 
