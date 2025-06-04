@@ -27,9 +27,10 @@ def init(send_server: str, send_port: int, user: str, password: str):
 
 
 @cfg.check_initialized
-def send_mail(subject: str, message: str, to: List[str], msg_type="html"):
+def send_mail(subject: str, message: str, to: List[str], msg_type="plain"):
     """
     to: list of email address send to, must be valid. (you may use `[mail.cfg.USER]`)
+    msg_type: "html" or "plain"
     """
     try:
         with SMTP_SSL(host=cfg.SEND_SERVER, port=cfg.SEND_PORT) as smtp:
