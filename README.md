@@ -53,3 +53,9 @@ Note by default, the minimum dependencies are installed. Refer to `[project.opti
 ```toml
 dependencies = ["integrations[notion,llm]"]
 ```
+
+## Development
+
+```bash
+uv pip install -r  pyproject.toml --all-extras --group dev
+```
