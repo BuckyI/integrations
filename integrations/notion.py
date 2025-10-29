@@ -99,12 +99,22 @@ def retrieve_comments_recursive(block_id: str, **kwargs) -> Generator[dict, None
 
 
 @require_client
-def retrieve_database_pages(
-    database_id: str, retrieve_all: bool = True, **kwargs
+def retrieve_data_source_pages(
+    data_source_id: str, retrieve_all: bool = True, **kwargs
 ) -> Generator[dict, None, None]:
     """
-    retrieve pages inside a database
+    retrieve pages inside a data source
     retrieve_all: if True, try to retrieve all pages by performing query in a loop.
+
+    supported kwargs:
+    - filter_properties
+    - sorts
+    - filter
+    - start_cursor
+    - page_size
+    - archived
+    - in_trash
+    - result_type
     """
     has_more = True
     start_cursor = None
@@ -112,8 +122,8 @@ def retrieve_database_pages(
         retrieve_all = False  # force only query once
 
     while has_more:
-        data: dict = client.databases.query(
-            database_id=database_id, start_cursor=start_cursor, **kwargs
+        data: dict = client.data_sources.query(
+            data_source_id=data_source_id, start_cursor=start_cursor, **kwargs
         )  # type: ignore
         yield from enrich_data(data["results"])
 
@@ -167,12 +177,12 @@ def retrieve_block_children_recursive(
 
 
 @require_client
-def create_database_page(database_id: str, properties: dict = {}) -> dict:
-    "create a new empty page inside a database, return the created page"
+def create_data_source_page(data_source_id: str, properties: dict = {}) -> dict:
+    "create a new empty page inside a data source, return the created page"
     # properties must be specified (`{}` for empty)
     # otherwise would raise body failed validation error
     page: dict = client.pages.create(
-        parent={"database_id": database_id}, properties=properties
+        parent={"data_source_id": data_source_id}, properties=properties
     )  # type: ignore
     return enrich_data(page)  # type: ignore
 
