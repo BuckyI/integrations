@@ -4,13 +4,17 @@
 
 import html
 import re
-from typing import Generator, Iterable
+from typing import Any, Callable, Generator, Iterable
 
 import notion_client
+from notion_client.helpers import extract_notion_id
 
 
 def init(token: str) -> None:
-    "token: Notion integration token"
+    """
+    token: Notion integration token
+    client.options.auth <- token
+    """
     global client
     client = notion_client.Client(auth=token)
 
@@ -44,6 +48,28 @@ def clean(data: dict) -> dict:
     return data
 
 
+def iterate_retrieve(
+    function: Callable[..., Any], **kwargs: Any
+) -> Generator[Any, None, None]:
+    """
+    Return an iterator over the results of any paginated Notion API.
+
+    if page_size is specified in kwargs, only query once and return the results (no pagination).
+    else, query in a loop until all results are retrieved.
+
+    Reference from notion_client.helpers.iterate_paginated_api.
+    """
+    next_cursor = kwargs.pop("start_cursor", None)
+
+    while True:
+        response = function(**kwargs, start_cursor=next_cursor)
+        yield from response.get("results", [])
+
+        next_cursor = response.get("next_cursor")
+        if "page_size" in kwargs or not response.get("has_more") or not next_cursor:
+            return
+
+
 @require_client
 def retrieve_general_info(id: str):
     """
@@ -53,13 +79,13 @@ def retrieve_general_info(id: str):
     data: dict = client.blocks.retrieve(id)  # type: ignore
     for k in ["object", "request_id"]:
         data.pop(k)
-    return enrich_data(data)
+    return data
 
 
 @require_client
 def retrieve_page(page_id: str) -> dict:
     "retrieve a page by id"
-    return enrich_data(client.pages.retrieve(page_id))  # type: ignore
+    return client.pages.retrieve(page_id)  # type: ignore
 
 
 @require_client
@@ -68,21 +94,9 @@ def retrieve_comments(
 ) -> Generator[dict, None, None]:
     """
     Retrieve comments for a given block.
-    retrieve_all: if True, try to retrieve all comments by performing query in a loop.
+    retrieve_all is kept for compatibility but ignored.
     """
-    has_more = True
-    start_cursor = None
-    if "page_size" in kwargs:
-        retrieve_all = False  # force only query once
-
-    while has_more:
-        comments: dict = client.comments.list(
-            block_id=block_id, start_cursor=start_cursor, **kwargs
-        )  # type: ignore
-        yield from enrich_data(comments["results"])
-
-        start_cursor = comments["next_cursor"]
-        has_more = comments["has_more"] and retrieve_all
+    yield from iterate_retrieve(client.comments.list, block_id=block_id, **kwargs)
 
 
 @require_client
@@ -104,7 +118,7 @@ def retrieve_data_source_pages(
 ) -> Generator[dict, None, None]:
     """
     retrieve pages inside a data source
-    retrieve_all: if True, try to retrieve all pages by performing query in a loop.
+    default retrieve all pages, set page_size (max 100) to limit results.
 
     supported kwargs:
     - filter_properties
@@ -116,19 +130,11 @@ def retrieve_data_source_pages(
     - in_trash
     - result_type
     """
-    has_more = True
-    start_cursor = None
-    if "page_size" in kwargs:
-        retrieve_all = False  # force only query once
+    # TODO: remove `retrieve_all`
 
-    while has_more:
-        data: dict = client.data_sources.query(
-            data_source_id=data_source_id, start_cursor=start_cursor, **kwargs
-        )  # type: ignore
-        yield from enrich_data(data["results"])
-
-        start_cursor = data["next_cursor"]
-        has_more = data["has_more"] and retrieve_all
+    yield from iterate_retrieve(
+        client.data_sources.query, data_source_id=data_source_id, **kwargs
+    )
 
 
 @require_client
@@ -137,21 +143,11 @@ def retrieve_block_children(
 ) -> Generator[dict, None, None]:
     """
     retrieve children blocks inside a page.
-    retrieve_all: if True, try to retrieve all pages by performing query in a loop.
+    retrieve_all is kept for compatibility but ignored.
     """
-    has_more = True
-    start_cursor = None
-    if "page_size" in kwargs:
-        retrieve_all = False  # force only query once
-
-    while has_more:
-        data: dict = client.blocks.children.list(
-            block_id=block_id, start_cursor=start_cursor
-        )  # type: ignore
-        yield from enrich_data(data["results"])
-
-        start_cursor = data["next_cursor"]
-        has_more = data["has_more"] and retrieve_all
+    yield from iterate_retrieve(
+        client.blocks.children.list, block_id=block_id, **kwargs
+    )
 
 
 @require_client
@@ -162,6 +158,8 @@ def retrieve_block_children_recursive(
     retrieve children blocks inside a page.
     retrieve_all: if True, try to retrieve all pages by performing query in a loop.
     """
+    # TODO: use `limit` instead of `page_size` to avoid confusion with Notion API's page_size
+
     ids = [block_id]
     limit = int(kwargs["page_size"]) if "page_size" in kwargs else float("inf")
     for i in ids:
@@ -184,7 +182,7 @@ def create_data_source_page(data_source_id: str, properties: dict = {}) -> dict:
     page: dict = client.pages.create(
         parent={"data_source_id": data_source_id}, properties=properties
     )  # type: ignore
-    return enrich_data(page)  # type: ignore
+    return page  # type: ignore
 
 
 def rich_text2html(rich_text: list):
