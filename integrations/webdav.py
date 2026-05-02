@@ -41,11 +41,12 @@ class JGY:
 
     def upload_file(
         self, source: str, filename: str | None = None, overwrite: bool = False
-    ) -> None:
+    ) -> str:
         """
         source: local file path
         filename: upload file name, default the same as local file
         overwrite: if True, overwrite existing file
+        return: remote file path
         """
         assert Path(source).is_file(), "file to be uploaded does not exist"
         if filename is None:  # default keep original filename
@@ -56,8 +57,9 @@ class JGY:
 
         dest = f"{self.root}/{filename}"
         self.client.upload(dest, source)
+        return dest
 
-    def upload_file_obj(self, file: io.BytesIO, filename: str) -> None:
+    def upload_file_obj(self, file: io.BytesIO, filename: str) -> str:
         assert not self.exists(filename), "file already exists in remote"
         dest = f"{self.root}/{filename}"
 
@@ -66,10 +68,12 @@ class JGY:
             with temp_file.file as f:
                 f.write(file.read())
             self.client.upload(dest, temp_file.name)
+        return dest
 
-    def upload_url(self, url: str, filename: str) -> None:
+    def upload_url(self, url: str, filename: str) -> str:
         assert not self.exists(filename), "file already exists in remote"
         response = requests.get(url)
         response.raise_for_status()
         dest = f"{self.root}/{filename}"
         self.client.upload_to(buff=response.content, remote_path=dest)
+        return dest
